@@ -3,11 +3,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ─── OpenAI 설정 ──────────────────────────────────
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = "gpt-4o-mini"
 
+# ─── Telegram 설정 ────────────────────────────────
+TELEGRAM_NOTIFY_ENABLED = os.getenv("TELEGRAM_NOTIFY_ENABLED", "false").lower() in ("true", "1", "yes")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
+# ─── Instagram 설정 ────────────────────────────────
+INSTAGRAM_ENABLED = os.getenv("INSTAGRAM_ENABLED", "false").lower() in ("true", "1", "yes")
+INSTAGRAM_ACCESS_TOKEN = os.getenv("INSTAGRAM_ACCESS_TOKEN", "")
+INSTAGRAM_BUSINESS_ACCOUNT_ID = os.getenv("INSTAGRAM_BUSINESS_ACCOUNT_ID", "")
+INSTAGRAM_HASHTAGS = os.getenv("INSTAGRAM_HASHTAGS", "#AI #News #TechNews")
+INSTAGRAM_POST_ENABLED = INSTAGRAM_ENABLED and bool(INSTAGRAM_ACCESS_TOKEN) and bool(INSTAGRAM_BUSINESS_ACCOUNT_ID)
+
+# ─── 일반 설정 ─────────────────────────────────────
 REQUEST_DELAY = 2
 REQUEST_TIMEOUT = 15
+DATA_DIR = os.getenv("DATA_DIR", "data")
 
 RSS_SOURCES = [
     {
