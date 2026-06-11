@@ -24,10 +24,10 @@ TREND_PROMPT = """다음 AI 뉴스 기사 제목들을 보고, 이번 수집분�
 
 class AiSummarizer:
     def __init__(self):
-        self.client = OpenAI(api_key=OPENAI_API_KEY)
+        self.client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
     def summarize(self, articles: list[Article]) -> list[Article]:
-        if not OPENAI_API_KEY:
+        if not self.client:
             print("  [SKIP] OPENAI_API_KEY가 설정되지 않아 AI 요약을 건너뜁니다.")
             for a in articles:
                 a.summary_ai = a.summary_raw[:60]
@@ -42,7 +42,7 @@ class AiSummarizer:
         return articles
 
     def extract_trends(self, articles: list[Article]) -> str:
-        if not OPENAI_API_KEY:
+        if not self.client:
             return "AI, LLM, 자동화, 로봇, 규제"
 
         titles = "\n".join(f"- {a.title}" for a in articles)
