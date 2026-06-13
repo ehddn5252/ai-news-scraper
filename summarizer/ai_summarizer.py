@@ -1,9 +1,9 @@
 import json
 
-from openai import OpenAI
+from anthropic import Anthropic
 
 from scrapers.base import Article
-from config import OPENAI_API_KEY, OPENAI_MODEL, CATEGORIES
+from config import CLAUDE_API_KEY, CLAUDE_MODEL, CATEGORIES
 
 SYSTEM_PROMPT = f"""너는 AI 뉴스 분석 전문가야.
 주어진 뉴스 기사 목록을 분석해서 JSON으로 결과를 반환해.
@@ -24,11 +24,11 @@ TREND_PROMPT = """다음 AI 뉴스 기사 제목들을 보고, 이번 수집분�
 
 class AiSummarizer:
     def __init__(self):
-        self.client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+        self.client = Anthropic(api_key=CLAUDE_API_KEY) if CLAUDE_API_KEY else None
 
     def summarize(self, articles: list[Article]) -> list[Article]:
         if not self.client:
-            print("  [SKIP] OPENAI_API_KEY가 설정되지 않아 AI 요약을 건너뜁니다.")
+            print("  [SKIP] CLAUDE_API_KEY가 설정되지 않아 AI 요약을 건너뜁니다.")
             for a in articles:
                 a.summary_ai = a.summary_raw[:60]
                 a.category = "기타"
@@ -46,15 +46,15 @@ class AiSummarizer:
             return "AI, LLM, 자동화, 로봇, 규제"
 
         titles = "\n".join(f"- {a.title}" for a in articles)
-        resp = self.client.chat.completions.create(
-            model=OPENAI_MODEL,
+        resp = self.client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=100,
             messages=[
                 {"role": "user", "content": TREND_PROMPT.format(titles=titles)},
             ],
             temperature=0.3,
-            max_tokens=100,
         )
-        return resp.choices[0].message.content.strip()
+        return resp.content[0].text.strip()
 
     def _summarize_batch(self, batch: list[Article]):
         input_data = [
@@ -62,16 +62,16 @@ class AiSummarizer:
             for i, a in enumerate(batch)
         ]
         try:
-            resp = self.client.chat.completions.create(
-                model=OPENAI_MODEL,
+            resp = self.client.messages.create(
+                model=CLAUDE_MODEL,
+                max_tokens=2000,
+                system=SYSTEM_PROMPT,
                 messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": json.dumps(input_data, ensure_ascii=False)},
                 ],
                 temperature=0.2,
-                max_tokens=2000,
             )
-            results = json.loads(resp.choices[0].message.content)
+            results = json.loads(resp.content[0].text)
             for item in results:
                 idx = item.get("index", -1)
                 if 0 <= idx < len(batch):

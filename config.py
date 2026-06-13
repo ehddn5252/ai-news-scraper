@@ -3,9 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ─── OpenAI 설정 ──────────────────────────────────
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_MODEL = "gpt-4o-mini"
+# ─── Claude (Anthropic) 설정 ────────────────────────
+CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY", "")
+CLAUDE_MODEL = "claude-3-5-sonnet-20241022"
 
 # ─── Telegram 설정 ────────────────────────────────
 TELEGRAM_NOTIFY_ENABLED = os.getenv("TELEGRAM_NOTIFY_ENABLED", "false").lower() in ("true", "1", "yes")
