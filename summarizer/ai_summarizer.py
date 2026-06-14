@@ -1,9 +1,10 @@
 import json
 
-from anthropic import Anthropic
+from anthropic import Anthropic, APIError, APITimeoutError, RateLimitError
 
 from scrapers.base import Article
 from config import CLAUDE_API_KEY, CLAUDE_MODEL, CATEGORIES
+from utils import retry
 
 SYSTEM_PROMPT = f"""너는 AI 뉴스 분석 전문가야.
 주어진 뉴스 기사 목록을 분석해서 JSON으로 결과를 반환해.
@@ -57,13 +58,18 @@ class AiSummarizer:
             return "AI, LLM, 자동화, 로봇, 규제"
 
         titles = "\n".join(f"- {a.title}" for a in articles)
-        resp = self.client.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=100,
-            messages=[
-                {"role": "user", "content": TREND_PROMPT.format(titles=titles)},
-            ],
-            temperature=0.3,
+        resp = retry(
+            lambda: self.client.messages.create(
+                model=CLAUDE_MODEL,
+                max_tokens=100,
+                messages=[
+                    {"role": "user", "content": TREND_PROMPT.format(titles=titles)},
+                ],
+                temperature=0.3,
+            ),
+            max_retries=3,
+            base_delay=5,
+            exceptions=(APIError, APITimeoutError, RateLimitError),
         )
         return resp.content[0].text.strip()
 
@@ -84,14 +90,19 @@ class AiSummarizer:
     def _detail_batch(self, batch: list[Article]):
         for article in batch:
             try:
-                resp = self.client.messages.create(
-                    model=CLAUDE_MODEL,
-                    max_tokens=500,
-                    system=DETAIL_SUMMARY_PROMPT,
-                    messages=[
-                        {"role": "user", "content": f"제목: {article.title}\n\n본문:\n{article.content}"},
-                    ],
-                    temperature=0.2,
+                resp = retry(
+                    lambda a=article: self.client.messages.create(
+                        model=CLAUDE_MODEL,
+                        max_tokens=500,
+                        system=DETAIL_SUMMARY_PROMPT,
+                        messages=[
+                            {"role": "user", "content": f"제목: {a.title}\n\n본문:\n{a.content}"},
+                        ],
+                        temperature=0.2,
+                    ),
+                    max_retries=3,
+                    base_delay=5,
+                    exceptions=(APIError, APITimeoutError, RateLimitError),
                 )
                 article.detail_summary = resp.content[0].text.strip()
                 print(f"  [OK] 상세 요약: {article.title[:50]}")
@@ -104,14 +115,19 @@ class AiSummarizer:
             for i, a in enumerate(batch)
         ]
         try:
-            resp = self.client.messages.create(
-                model=CLAUDE_MODEL,
-                max_tokens=2000,
-                system=SYSTEM_PROMPT,
-                messages=[
-                    {"role": "user", "content": json.dumps(input_data, ensure_ascii=False)},
-                ],
-                temperature=0.2,
+            resp = retry(
+                lambda: self.client.messages.create(
+                    model=CLAUDE_MODEL,
+                    max_tokens=2000,
+                    system=SYSTEM_PROMPT,
+                    messages=[
+                        {"role": "user", "content": json.dumps(input_data, ensure_ascii=False)},
+                    ],
+                    temperature=0.2,
+                ),
+                max_retries=3,
+                base_delay=5,
+                exceptions=(APIError, APITimeoutError, RateLimitError),
             )
             results = json.loads(resp.content[0].text)
             for item in results:

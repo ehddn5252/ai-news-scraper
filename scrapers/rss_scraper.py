@@ -5,6 +5,7 @@ import feedparser
 
 from .base import Article
 from config import REQUEST_DELAY
+from utils import retry
 
 
 class RssScraper:
@@ -12,7 +13,7 @@ class RssScraper:
         articles = []
         for source in sources:
             try:
-                feed = feedparser.parse(source["url"])
+                feed = retry(lambda src=source: feedparser.parse(src["url"]))
                 for entry in feed.entries[:15]:
                     article = self._parse_entry(entry, source["name"])
                     if article:
