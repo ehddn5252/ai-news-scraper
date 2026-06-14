@@ -1,12 +1,21 @@
 import logging
-import markdown
 
+import markdown
 from wordpress_xmlrpc import Client, WordPressPost
 from wordpress_xmlrpc.methods.posts import NewPost
 
 from config import WP_ENDPOINT, WP_USER, WP_APP_PASSWORD, WP_AI_CATEGORY_ID
 
 logger = logging.getLogger(__name__)
+
+
+def _get_xmlrpc_url(endpoint: str) -> str:
+    endpoint = endpoint.rstrip("/")
+    if endpoint.endswith("/xmlrpc.php"):
+        return endpoint
+    from urllib.parse import urlparse
+    parsed = urlparse(endpoint)
+    return f"{parsed.scheme}://{parsed.hostname}/xmlrpc.php"
 
 
 def post_report_to_blog(title: str, markdown_content: str) -> tuple[bool, str]:
@@ -16,8 +25,9 @@ def post_report_to_blog(title: str, markdown_content: str) -> tuple[bool, str]:
 
     try:
         html_content = markdown.markdown(markdown_content, extensions=["tables", "fenced_code"])
+        xmlrpc_url = _get_xmlrpc_url(WP_ENDPOINT)
 
-        wp = Client(WP_ENDPOINT, WP_USER, WP_APP_PASSWORD)
+        wp = Client(xmlrpc_url, WP_USER, WP_APP_PASSWORD)
 
         post = WordPressPost()
         post.title = title
