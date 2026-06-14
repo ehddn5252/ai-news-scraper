@@ -129,14 +129,29 @@ class AiSummarizer:
                 base_delay=5,
                 exceptions=(APIError, APITimeoutError, RateLimitError),
             )
-            results = json.loads(resp.content[0].text)
+            raw_text = resp.content[0].text.strip()
+            if raw_text.startswith("```"):
+                raw_text = raw_text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+            results = json.loads(raw_text)
+            if not isinstance(results, list):
+                raise ValueError(f"Expected JSON array, got {type(results).__name__}")
             for item in results:
+                if not isinstance(item, dict):
+                    continue
                 idx = item.get("index", -1)
                 if 0 <= idx < len(batch):
-                    batch[idx].summary_ai = item.get("summary_ai", "")
-                    batch[idx].category = item.get("category", "기타")
-                    batch[idx].importance = item.get("importance", 3)
+                    batch[idx].summary_ai = str(item.get("summary_ai", ""))[:100]
+                    category = item.get("category", "기타")
+                    batch[idx].category = category if category in CATEGORIES else "기타"
+                    importance = item.get("importance", 3)
+                    batch[idx].importance = max(1, min(5, int(importance)))
             print(f"  [OK] AI 요약 완료: {len(results)}건")
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"  [WARN] AI 응답 파싱 실패, 폴백 적용: {e}")
+            for a in batch:
+                a.summary_ai = a.summary_raw[:60]
+                a.category = "기타"
+                a.importance = 3
         except Exception as e:
             print(f"  [FAIL] AI 요약 실패: {e}")
             for a in batch:
