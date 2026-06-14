@@ -12,6 +12,8 @@ class Article:
     category: str = ""
     importance: int = 0
     summary_ai: str = ""
+    content: str = ""
+    detail_summary: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)

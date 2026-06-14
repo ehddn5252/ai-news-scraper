@@ -34,6 +34,11 @@ def generate_report(articles: list[Article], trends: str) -> str:
         summary = a.summary_ai or a.summary_raw[:60]
         lines.append(f"{i}. **[{a.title}]({a.url})**")
         lines.append(f"   - {summary} | {a.source} | {a.category} | 중요도: {'*' * a.importance}")
+        if a.detail_summary:
+            lines.append(f"")
+            for line in a.detail_summary.split("\n"):
+                if line.strip():
+                    lines.append(f"   > {line.strip()}")
         lines.append(f"")
 
     lines.append(f"---")
@@ -50,6 +55,12 @@ def generate_report(articles: list[Article], trends: str) -> str:
         for a in cat_articles:
             summary = a.summary_ai or a.summary_raw[:60]
             lines.append(f"- [{a.title}]({a.url}) — {summary}")
+            if a.detail_summary:
+                lines.append(f"")
+                for line in a.detail_summary.split("\n"):
+                    if line.strip():
+                        lines.append(f"  > {line.strip()}")
+                lines.append(f"")
         lines.append(f"")
 
     lines.append(f"---")

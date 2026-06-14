@@ -5,6 +5,7 @@ from datetime import datetime
 from config import RSS_SOURCES, DATA_DIR, INSTAGRAM_POST_ENABLED, TELEGRAM_NOTIFY_ENABLED
 from scrapers import RssScraper
 from scrapers.base import Article
+from scrapers.content_fetcher import fetch_article_content
 from summarizer import AiSummarizer
 from report_generator import generate_report
 
@@ -46,25 +47,36 @@ def main():
         notify_async("📰 AI 뉴스 스크래핑을 시작합니다...")
 
     # 1. RSS 수집
-    print("[1/4] RSS 피드 수집 중...")
+    print("[1/6] RSS 피드 수집 중...")
     rss = RssScraper()
     articles = rss.fetch(RSS_SOURCES)
     print(f"  총 {len(articles)}건 수집\n")
 
     # 2. 중복 제거
-    print("[2/4] 중복 제거 중...")
+    print("[2/6] 중복 제거 중...")
     articles = deduplicate(articles)
     print(f"  중복 제거 후 {len(articles)}건\n")
 
     # 3. AI 요약 + 분류
-    print("[3/4] AI 요약 및 분류 중...")
+    print("[3/6] AI 요약 및 분류 중...")
     summarizer = AiSummarizer()
     articles = summarizer.summarize(articles)
     trends = summarizer.extract_trends(articles)
     print()
 
-    # 4. 리포트 생성
-    print("[4/4] 리포트 생성 중...")
+    # 4. 기사 본문 추출 (상위 기사)
+    print("[4/6] 주요 기사 본문 추출 중...")
+    top_articles = sorted(articles, key=lambda a: a.importance, reverse=True)[:10]
+    fetch_article_content(top_articles)
+    print()
+
+    # 5. 상세 요약 생성
+    print("[5/6] 상세 요약 생성 중...")
+    summarizer.summarize_detail(articles)
+    print()
+
+    # 6. 리포트 생성
+    print("[6/6] 리포트 생성 중...")
     report_path = generate_report(articles, trends)
     print(f"  리포트 저장: {report_path}")
 

@@ -15,6 +15,17 @@ SYSTEM_PROMPT = f"""너는 AI 뉴스 분석 전문가야.
 
 반드시 유효한 JSON 배열만 출력해. 설명 텍스트 없이 JSON만."""
 
+DETAIL_SUMMARY_PROMPT = """너는 AI 뉴스 전문 요약가야.
+주어진 기사 본문을 읽고, 핵심 내용을 한국어 3~4문장으로 요약해.
+
+요약 규칙:
+1. 기사의 핵심 사실과 주요 수치를 포함할 것
+2. 누가, 무엇을, 왜 했는지를 명확히 할 것
+3. 기술적 의미나 업계 영향이 있다면 포함할 것
+4. 자연스러운 한국어 문장으로 작성할 것
+
+본문만 요약하고, 다른 텍스트 없이 요약문만 출력해."""
+
 TREND_PROMPT = """다음 AI 뉴스 기사 제목들을 보고, 이번 수집분의 핵심 트렌드 키워드를 한국어로 5개 추출해.
 쉼표로 구분해서 키워드만 출력해. 설명 없이 키워드만.
 
@@ -55,6 +66,37 @@ class AiSummarizer:
             temperature=0.3,
         )
         return resp.content[0].text.strip()
+
+    def summarize_detail(self, articles: list[Article]) -> list[Article]:
+        if not self.client:
+            print("  [SKIP] CLAUDE_API_KEY가 설정되지 않아 상세 요약을 건너뜁니다.")
+            return articles
+
+        targets = [a for a in articles if a.content]
+        print(f"  본문이 있는 기사 {len(targets)}건에 대해 상세 요약 진행...")
+
+        batch_size = 5
+        for i in range(0, len(targets), batch_size):
+            batch = targets[i:i + batch_size]
+            self._detail_batch(batch)
+        return articles
+
+    def _detail_batch(self, batch: list[Article]):
+        for article in batch:
+            try:
+                resp = self.client.messages.create(
+                    model=CLAUDE_MODEL,
+                    max_tokens=500,
+                    system=DETAIL_SUMMARY_PROMPT,
+                    messages=[
+                        {"role": "user", "content": f"제목: {article.title}\n\n본문:\n{article.content}"},
+                    ],
+                    temperature=0.2,
+                )
+                article.detail_summary = resp.content[0].text.strip()
+                print(f"  [OK] 상세 요약: {article.title[:50]}")
+            except Exception as e:
+                print(f"  [FAIL] 상세 요약 실패: {article.title[:50]} - {e}")
 
     def _summarize_batch(self, batch: list[Article]):
         input_data = [
