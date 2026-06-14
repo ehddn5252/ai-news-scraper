@@ -12,6 +12,13 @@ TELEGRAM_NOTIFY_ENABLED = os.getenv("TELEGRAM_NOTIFY_ENABLED", "false").lower() 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
+# ─── WordPress 블로그 설정 ─────────────────────────
+WP_ENDPOINT = os.getenv("WP_ENDPOINT", "")
+WP_USER = os.getenv("WP_USER", "")
+WP_APP_PASSWORD = os.getenv("WP_APP_PASSWORD", "")
+WP_AI_CATEGORY_ID = os.getenv("WP_AI_CATEGORY_ID", "")
+WP_POST_ENABLED = os.getenv("WP_POST_ENABLED", "false").lower() in ("true", "1", "yes")
+
 # ─── Instagram 설정 ────────────────────────────────
 INSTAGRAM_ENABLED = os.getenv("INSTAGRAM_ENABLED", "false").lower() in ("true", "1", "yes")
 INSTAGRAM_ACCESS_TOKEN = os.getenv("INSTAGRAM_ACCESS_TOKEN", "")

@@ -29,6 +29,11 @@ jobs:
           TELEGRAM_NOTIFY_ENABLED: true
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WP_POST_ENABLED: true
+          WP_ENDPOINT: ${{ secrets.WP_ENDPOINT }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          WP_AI_CATEGORY_ID: ${{ secrets.WP_AI_CATEGORY_ID }}
         run: python main.py
 
       - name: Commit and push report

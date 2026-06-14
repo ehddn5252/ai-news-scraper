@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime
 
-from config import RSS_SOURCES, DATA_DIR, INSTAGRAM_POST_ENABLED, TELEGRAM_NOTIFY_ENABLED
+from config import RSS_SOURCES, DATA_DIR, INSTAGRAM_POST_ENABLED, TELEGRAM_NOTIFY_ENABLED, WP_POST_ENABLED
 from scrapers import RssScraper
 from scrapers.base import Article
 from scrapers.content_fetcher import fetch_article_content
@@ -85,7 +85,23 @@ def main():
     save_data(articles, data_path)
     print(f"  데이터 저장: {data_path}")
 
-    # 5. Instagram 포스팅 (비활성화 시 스킵)
+    # WordPress 블로그 포스팅
+    if WP_POST_ENABLED:
+        print("\n[Blog] WordPress 블로그 포스팅 중...")
+        try:
+            from blog_poster import post_report_to_blog
+            with open(report_path, "r", encoding="utf-8") as f:
+                report_content = f.read()
+            title = f"{today} AI 뉴스 데일리 리포트"
+            success, result = post_report_to_blog(title, report_content)
+            if success:
+                print(f"  블로그 포스팅 성공 (ID: {result})")
+            else:
+                print(f"  블로그 포스팅 실패: {result}")
+        except Exception as e:
+            print(f"  블로그 포스팅 오류 (계속 진행): {e}")
+
+    # Instagram 포스팅 (비활성화 시 스킵)
     if INSTAGRAM_POST_ENABLED and post_news_async and len(articles) > 0:
         print("\n[5/5] Instagram 포스팅 중...")
         # 상위 트렌드 기사를 Instagram에 포스팅
