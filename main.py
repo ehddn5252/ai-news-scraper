@@ -112,7 +112,7 @@ def main():
                 if hasattr(article, "image_url") and article.image_url:
                     caption = build_news_caption(
                         title=article.title[:100],
-                        summary=article.summary[:200] if article.summary else "",
+                        summary=(article.summary_ai or article.summary_raw)[:200],
                         category=article.category if hasattr(article, "category") else "",
                         source=article.source,
                         url=article.url,
